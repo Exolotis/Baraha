@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hindi to Baraha Converter</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+    background: #f5f5f5;
+  }
+
+  h2 { color: #333; }
+
+  textarea {
+    width: 100%;
+    height: 160px;
+    font-size: 16px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+  }
+
+  #output {
+    font-family: 'Baraha', 'Kruti Dev 010', sans-serif;
+    background: #fff;
+    border: 1px solid #aaa;
+  }
+
+  button {
+    background: #4a90d9;
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+
+  button:hover { background: #2e70b8; }
+
+  #copyBtn { background: #27ae60; }
+  #copyBtn:hover { background: #1e8a4a; }
+
+  #status {
+    color: #27ae60;
+    font-size: 14px;
+    margin-left: 10px;
+  }
+
+  .label {
+    font-weight: bold;
+    margin: 10px 0 4px;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>Hindi (Unicode) → Baraha Converter</h2>
+
+<div class="label">Input (Unicode Hindi)</div>
+<textarea id="input"></textarea>
+
+<button onclick="convert()">Convert →</button>
+
+<div class="label">Output (Baraha ASCII)</div>
+<textarea id="output" readonly></textarea>
+
+<button id="copyBtn" onclick="copyOutput()">Copy Output</button>
+<span id="status"></span>
+
+<script>
+
+// Core maps (ONLY required ones)
+
+const cMap = {
+  'क':'d','ख':'D','ग':'x','घ':'X','ङ':'Ä',
+  'च':'p','छ':'N','ज':'t','झ':'>','ञ':'¥',
+  'ट':'V','ठ':'B','ड':'M','ढ':'<','ण':'.k',
+  'त':'r','थ':'Fk','द':'n','ध':'/k','न':'u',
+  'प':'i','फ':'Q','ब':'c','भ':'Hk','म':'e',
+  'य':'A','र':'j','ल':'y','व':'o',
+  'श':'"k','ष':';k','स':'l','ह':'g',
+  'ळ':'G','ज़':'T','ड़':'M+','ढ़':'<+'
+};
+
+const vMap = {
+  'अ':'v','आ':'vk','इ':'b','ई':'bZ','उ':'m','ऊ':'Å',
+  'ऋ':'_','ए':',','ऐ':',s','ओ':'vks','औ':'vkS'
+};
+
+const mMap = {
+  'ा':'k','ि':'f','ी':'h','ु':'q','ू':'w',
+  'ृ':'`','े':'s','ै':'S','ो':'ks','ौ':'kS',
+  'ं':'a','ः':'%','ँ':'W'
+};
+
+const digitMap = {
+  '०':'0','१':'1','२':'2','३':'3','४':'4',
+  '५':'5','६':'6','७':'7','८':'8','९':'9'
+};
+
+const specialMap = {
+  ' ': ' ', '\n': '\n',
+  '।': '~','॥': '~~',
+  ',': ',', '.': '.', '-': '-',
+  '(': '(', ')': ')',
+  '!': '!', '?': '?'
+};
+
+function isConsonant(ch){ return cMap[ch]; }
+function isVowel(ch){ return vMap[ch]; }
+function isMatra(ch){ return mMap[ch]; }
+function isHalant(ch){ return ch === '्'; }
+
+function convert(){
+  const input = document.getElementById('input').value;
+  let result = '';
+  let chars = [...input];
+
+  for(let i=0;i<chars.length;i++){
+    let ch = chars[i];
+
+    if(digitMap[ch]){ result += digitMap[ch]; continue; }
+    if(Object.prototype.hasOwnProperty.call(specialMap,ch)){ result += specialMap[ch]; continue; }
+    if(vMap[ch]){ result += vMap[ch]; continue; }
+
+    if(isConsonant(ch)){
+      let next = chars[i+1];
+      let matra = '';
+
+      if(isMatra(next)){
+        matra = mMap[next];
+        i++;
+      }
+
+      result += cMap[ch] + matra;
+      continue;
+    }
+
+    result += ch;
+  }
+
+  document.getElementById('output').value = result;
+}
+
+function copyOutput(){
+  const text = document.getElementById('output').value;
+
+  navigator.clipboard.writeText(text).then(()=>{
+    const s = document.getElementById('status');
+    s.textContent = '✓ Copied!';
+    setTimeout(()=>s.textContent='',2000);
+  });
+}
+
+// Auto-load sample
+window.onload = () => {
+  document.getElementById('input').value =
+  "संपादकीय - तरंग हमारे विद्यालय की वार्षिक पत्रिका तरंग...";
+  convert();
+};
+
+</script>
+
+</body>
+</html>
