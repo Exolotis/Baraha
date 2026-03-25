@@ -2,173 +2,815 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Hindi to Baraha Converter</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hindi → BRH Devanagari Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 0 20px;
-    background: #f5f5f5;
+  :root {
+    --bg: #0f0e0d;
+    --surface: #1a1916;
+    --border: #2e2c28;
+    --accent: #c8974a;
+    --accent2: #8db87a;
+    --text: #e8e0d0;
+    --muted: #7a7264;
+    --error: #c85a4a;
   }
-
-  h2 { color: #333; }
-
-  textarea {
-    width: 100%;
-    height: 160px;
-    font-size: 16px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-sizing: border-box;
+ 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  body {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+ 
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, rgba(200,151,74,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(141,184,122,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+ 
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+ 
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+ 
+  .badge {
+    display: inline-block;
+    font-family: 'Source Code Pro', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+    opacity: 0.8;
+  }
+ 
+  h1 {
+    font-size: clamp(22px, 4vw, 32px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: var(--text);
     margin-bottom: 10px;
   }
-
-  #output {
-    font-family: 'Baraha', 'Kruti Dev 010', sans-serif;
-    background: #fff;
-    border: 1px solid #aaa;
+ 
+  h1 span {
+    color: var(--accent);
   }
-
-  button {
-    background: #4a90d9;
-    color: white;
+ 
+  .subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.6;
+  }
+ 
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+ 
+  @media (max-width: 620px) {
+    .panels { grid-template-columns: 1fr; }
+  }
+ 
+  .panel {
+    display: flex;
+    flex-direction: column;
+  }
+ 
+  .panel:first-child {
+    border-right: 1px solid var(--border);
+  }
+ 
+  @media (max-width: 620px) {
+    .panel:first-child {
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+  }
+ 
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+ 
+  .panel-title {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+ 
+  .lang-tag {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+  }
+ 
+  .lang-tag.unicode {
+    background: rgba(141,184,122,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(141,184,122,0.25);
+  }
+ 
+  .lang-tag.brh {
+    background: rgba(200,151,74,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(200,151,74,0.25);
+  }
+ 
+  textarea {
+    flex: 1;
+    min-height: 240px;
+    background: transparent;
     border: none;
-    padding: 10px 22px;
-    border-radius: 6px;
+    outline: none;
+    resize: none;
+    padding: 20px;
+    font-size: 18px;
+    line-height: 1.8;
+    color: var(--text);
+    font-family: 'Noto Sans Devanagari', 'Mangal', Arial Unicode MS, sans-serif;
+    caret-color: var(--accent2);
+  }
+ 
+  textarea::placeholder {
+    color: var(--muted);
+    opacity: 0.5;
+    font-style: italic;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 15px;
+  }
+ 
+  #output {
+    font-family: 'BRH Devanagari', 'Baraha', 'Noto Sans', monospace;
+    color: var(--accent);
+    cursor: default;
+    user-select: all;
+    background: rgba(200,151,74,0.03);
+  }
+ 
+  .panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(255,255,255,0.01);
+  }
+ 
+  .char-count {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+ 
+  .btn {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 2px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: transparent;
+  }
+ 
+  .btn-clear {
+    color: var(--muted);
+    border-color: var(--border);
+  }
+  .btn-clear:hover {
+    color: var(--error);
+    border-color: var(--error);
+  }
+ 
+  .btn-copy {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .btn-copy:hover {
+    background: rgba(200,151,74,0.15);
+  }
+  .btn-copy.copied {
+    color: var(--accent2);
+    border-color: var(--accent2);
+    background: rgba(141,184,122,0.1);
+  }
+ 
+  .divider-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0;
+    color: var(--muted);
+    font-size: 18px;
+    letter-spacing: -2px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+ 
+  /* Samples section */
+  .samples {
+    margin-top: 32px;
+  }
+ 
+  .samples-header {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+ 
+  .sample-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+ 
+  .sample-btn {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px 14px;
+    color: var(--text);
+    font-family: 'Noto Sans Devanagari', sans-serif;
     font-size: 15px;
     cursor: pointer;
-    margin-right: 10px;
+    transition: all 0.15s;
   }
-
-  button:hover { background: #2e70b8; }
-
-  #copyBtn { background: #27ae60; }
-  #copyBtn:hover { background: #1e8a4a; }
-
-  #status {
-    color: #27ae60;
-    font-size: 14px;
-    margin-left: 10px;
+  .sample-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(200,151,74,0.06);
   }
-
-  .label {
-    font-weight: bold;
-    margin: 10px 0 4px;
+ 
+  /* Mapping reference */
+  .ref-toggle {
+    margin-top: 28px;
+    text-align: center;
   }
+ 
+  .btn-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-toggle:hover {
+    border-color: var(--muted);
+    color: var(--text);
+  }
+ 
+  .ref-table {
+    display: none;
+    margin-top: 24px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .ref-table.open { display: block; }
+ 
+  .ref-table-inner {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1px;
+    background: var(--border);
+  }
+ 
+  .ref-cell {
+    background: var(--surface);
+    padding: 10px 12px;
+    text-align: center;
+  }
+ 
+  .ref-cell .dev {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    font-size: 18px;
+    color: var(--accent2);
+    display: block;
+  }
+ 
+  .ref-cell .brh-code {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    display: block;
+    margin-top: 3px;
+  }
+ 
+  .ref-cell .label {
+    font-size: 10px;
+    color: var(--muted);
+    display: block;
+    margin-top: 2px;
+    letter-spacing: 0.06em;
+  }
+ 
+  .status-bar {
+    margin-top: 12px;
+    text-align: center;
+    min-height: 18px;
+  }
+ 
+  .status-msg {
+    font-family: 'Source Code Pro', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--accent2);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .status-msg.show { opacity: 1; }
 </style>
 </head>
-
 <body>
-
-<h2>Hindi (Unicode) → Baraha Converter</h2>
-
-<div class="label">Input (Unicode Hindi)</div>
-<textarea id="input"></textarea>
-
-<button onclick="convert()">Convert →</button>
-
-<div class="label">Output (Baraha ASCII)</div>
-<textarea id="output" readonly></textarea>
-
-<button id="copyBtn" onclick="copyOutput()">Copy Output</button>
-<span id="status"></span>
-
+<div class="wrapper">
+  <header>
+    <div class="badge">Font Encoder</div>
+    <h1>Hindi → <span>BRH Devanagari</span></h1>
+    <p class="subtitle">Converts Unicode Hindi (Devanagari) to BRH Devanagari legacy font encoding<br>
+    as used in the St. Francis de Sales school exam papers</p>
+  </header>
+ 
+  <div class="panels">
+    <!-- INPUT -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Input</span>
+        <span class="lang-tag unicode">Unicode Hindi</span>
+      </div>
+      <textarea id="input" placeholder="हिंदी में टाइप करें…&#10;Type Hindi here (Unicode)"></textarea>
+      <div class="panel-footer">
+        <span class="char-count" id="in-count">0 chars</span>
+        <button class="btn btn-clear" onclick="clearAll()">Clear</button>
+      </div>
+    </div>
+ 
+    <!-- OUTPUT -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Output</span>
+        <span class="lang-tag brh">BRH Devanagari</span>
+      </div>
+      <textarea id="output" readonly placeholder="BRH encoded output will appear here…"></textarea>
+      <div class="panel-footer">
+        <span class="char-count" id="out-count">0 chars</span>
+        <button class="btn btn-copy" id="copy-btn" onclick="copyOutput()">Copy</button>
+      </div>
+    </div>
+  </div>
+ 
+  <div class="status-bar">
+    <span class="status-msg" id="status-msg">Copied to clipboard!</span>
+  </div>
+ 
+  <!-- Samples -->
+  <div class="samples">
+    <div class="samples-header">Quick samples</div>
+    <div class="sample-grid">
+      <button class="sample-btn" onclick="setSample('भाग-क (व्याकरण)')">भाग-क (व्याकरण)</button>
+      <button class="sample-btn" onclick="setSample('कबीर जी केवल महान कवि ही नहीं')">कबीर जी केवल...</button>
+      <button class="sample-btn" onclick="setSample('निम्नलिखित में से किसी एक विषय पर')">निम्नलिखित में से...</button>
+      <button class="sample-btn" onclick="setSample('हमारे सच्चे मित्र')">हमारे सच्चे मित्र</button>
+      <button class="sample-btn" onclick="setSample('धर्म और जाति के नाम पर')">धर्म और जाति...</button>
+      <button class="sample-btn" onclick="setSample('तीर्थयात्रा पर जा रहे थे')">तीर्थयात्रा पर...</button>
+      <button class="sample-btn" onclick="setSample('मार्ग में उन्होंने देखा')">मार्ग में उन्होंने...</button>
+      <button class="sample-btn" onclick="setSample('पुस्तकालय से हिंदी की पुस्तकें प्राप्त करने हेतु प्रधानाचार्य को प्रार्थना पत्र लिखिए')">पुस्तकालय से...</button>
+    </div>
+  </div>
+ 
+  <!-- Reference toggle -->
+  <div class="ref-toggle">
+    <button class="btn-toggle" onclick="toggleRef(this)">Show character map ↓</button>
+    <div class="ref-table" id="ref-table">
+      <div class="ref-table-inner" id="ref-inner"></div>
+    </div>
+  </div>
+</div>
+ 
 <script>
-
-// Core maps (ONLY required ones)
-
-const cMap = {
-  'क':'d','ख':'D','ग':'x','घ':'X','ङ':'Ä',
-  'च':'p','छ':'N','ज':'t','झ':'>','ञ':'¥',
-  'ट':'V','ठ':'B','ड':'M','ढ':'<','ण':'.k',
-  'त':'r','थ':'Fk','द':'n','ध':'/k','न':'u',
-  'प':'i','फ':'Q','ब':'c','भ':'Hk','म':'e',
-  'य':'A','र':'j','ल':'y','व':'o',
-  'श':'"k','ष':';k','स':'l','ह':'g',
-  'ळ':'G','ज़':'T','ड़':'M+','ढ़':'<+'
+// =============================================================================
+// BRH DEVANAGARI ENCODING ENGINE
+// Reverse-engineered from BRH Devanagari font used in actual school documents
+// =============================================================================
+ 
+// Consonant definitions: [base_char, tail_char, tail_type]
+// tail_type: 'E' = É tail (most consonants), 'U' = ü tail (क), 'H' = û tail (ह,छ), '0' = no tail (द,र)
+const CONS = {
+  'क': ['M', 'ü', 'U'],   // Mü — ü-tail, matras go between base and ü
+  'ख': ['Z', 'É', 'E'],
+  'ग': ['a', 'É', 'E'],
+  'घ': ['b', 'É', 'E'],
+  'ङ': ['Ä', 'É', 'E'],
+  'च': ['c', 'É', 'E'],
+  'छ': ['û', '', '0'],    // single char
+  'ज': ['e', 'É', 'E'],
+  'झ': ['>', 'É', 'E'],
+  'ञ': ['¤', 'É', 'E'],
+  'ट': ['V', 'É', 'E'],
+  'ठ': ['B', 'É', 'E'],
+  'ड': ['M', 'û', 'H'],
+  'ढ': ['<', 'É', 'E'],
+  'ण': ['h', 'É', 'E'],
+  'त': ['i', 'É', 'E'],
+  'थ': ['j', 'É', 'E'],
+  'द': ['S', '', '0'],    // single char
+  'ध': ['k', 'É', 'E'],
+  'न': ['l', 'É', 'E'],
+  'प': ['m', 'É', 'E'],
+  'फ': ['T', 'É', 'E'],
+  'ब': ['o', 'É', 'E'],
+  'भ': ['p', 'É', 'E'],
+  'म': ['q', 'É', 'E'],
+  'य': ['r', 'É', 'E'],
+  'र': ['U', '', '0'],    // single char (रeph handled separately)
+  'ल': ['s', 'É', 'E'],
+  'व': ['u', 'É', 'E'],
+  'श': ['z', 'É', 'E'],
+  'ष': ['w', 'É', 'E'],
+  'स': ['x', 'É', 'E'],
+  'ह': ['W', 'û', 'H'],  // Wû — û-tail
+  // Extended
+  'ळ': ['G', 'É', 'E'],
+  'क्ष': ['¥', 'É', 'E'],
+  'ज्ञ': ['×', 'É', 'E'],
+  'ड़': ['M', 'û', 'H'],
+  'ढ़': ['<', 'É', 'E'],
 };
-
-const vMap = {
-  'अ':'v','आ':'vk','इ':'b','ई':'bZ','उ':'m','ऊ':'Å',
-  'ऋ':'_','ए':',','ऐ':',s','ओ':'vks','औ':'vkS'
+ 
+// Half-forms used in specific conjuncts
+const HALF_FORMS = {
+  'त्र': '§É',   // त् + र -> §É
+  'त्': '§',     // half-त in other conjuncts like त्व -> §uÉ
 };
-
-const mMap = {
-  'ा':'k','ि':'f','ी':'h','ु':'q','ू':'w',
-  'ृ':'`','े':'s','ै':'S','ो':'ks','ौ':'kS',
-  'ं':'a','ः':'%','ँ':'W'
+ 
+// Independent vowels
+const VOWELS = {
+  'अ': 'A', 'आ': 'AÉ', 'इ': 'C', 'ई': 'CÏ',
+  'उ': 'E', 'ऊ': 'EÔ', 'ऋ': '_É',
+  'ए': 'L', 'ऐ': 'Læ',
+  'ओ': 'Aå', 'औ': 'AÉæ',
 };
-
-const digitMap = {
-  '०':'0','१':'1','२':'2','३':'3','४':'4',
-  '५':'5','६':'6','७':'7','८':'8','९':'9'
+ 
+// Vowel matras
+// 'after_E': for É-tail and 0-tail consonants (matra goes after full consonant)
+// 'between_U': for ü-tail (क) consonants (matra goes between base and ü)
+const MATRAS_AFTER = {
+  'ा': 'É',   // aa-matra — NOTE: É is also the É-tail, so result is double É for É-tail consonants
+  'ी': 'Ï',   // ii-matra
+  'ु': 'Ñ',   // u-matra
+  'ू': 'Ô',   // uu-matra
+  'े': 'å',   // e-matra
+  'ै': 'æ',   // ai-matra
+  'ो': 'Éå',  // o-matra (É+å)
+  'ौ': 'Éæ',  // au-matra
+  'ं': 'Ç',   // anusvara
+  'ः': '%',   // visarga
+  'ँ': 'W',   // chandrabindu
 };
-
-const specialMap = {
-  ' ': ' ', '\n': '\n',
-  '।': '~','॥': '~~',
-  ',': ',', '.': '.', '-': '-',
-  '(': '(', ')': ')',
-  '!': '!', '?': '?'
+ 
+const MATRAS_BETWEEN_U = {
+  'ा': 'É',   // क+ा -> M+É+ü
+  'े': 'å',   // क+े -> M+å+ü  (confirmed!)
+  'ै': 'æ',
+  'ो': 'Éå',
+  'ौ': 'Éæ',
+  'ु': 'Ñ',
+  'ू': 'Ô',
+  // ी is special for ü-tail: comes AFTER the full consonant as Ð
 };
-
-function isConsonant(ch){ return cMap[ch]; }
-function isVowel(ch){ return vMap[ch]; }
-function isMatra(ch){ return mMap[ch]; }
-function isHalant(ch){ return ch === '्'; }
-
-function convert(){
-  const input = document.getElementById('input').value;
-  let result = '';
-  let chars = [...input];
-
-  for(let i=0;i<chars.length;i++){
-    let ch = chars[i];
-
-    if(digitMap[ch]){ result += digitMap[ch]; continue; }
-    if(Object.prototype.hasOwnProperty.call(specialMap,ch)){ result += specialMap[ch]; continue; }
-    if(vMap[ch]){ result += vMap[ch]; continue; }
-
-    if(isConsonant(ch)){
-      let next = chars[i+1];
-      let matra = '';
-
-      if(isMatra(next)){
-        matra = mMap[next];
-        i++;
+ 
+const DIGITS = {'०':'0','१':'1','२':'2','३':'3','४':'4','५':'5','६':'6','७':'7','८':'8','९':'9'};
+const SPECIAL = {'।':'~','॥':'~~'};
+ 
+function unicodeToBRH(text) {
+  const chars = [...text];
+  const out = [];
+  let i = 0;
+ 
+  while (i < chars.length) {
+    const ch = chars[i];
+ 
+    // Digits
+    if (DIGITS[ch]) { out.push(DIGITS[ch]); i++; continue; }
+ 
+    // Punctuation / special
+    if (SPECIAL[ch]) { out.push(SPECIAL[ch]); i++; continue; }
+ 
+    // Independent vowels
+    if (VOWELS[ch]) { out.push(VOWELS[ch]); i++; continue; }
+ 
+    // Consonant
+    if (CONS[ch]) {
+      const [base, tail, ttype] = CONS[ch];
+      const nxt = chars[i + 1] || '';
+      const nxt2 = chars[i + 2] || '';
+ 
+      // ━━ REPH: र + ् — encode as ï after the following consonant ━━
+      if (ch === 'र' && nxt === '्') {
+        i += 2; // consume र्
+        // Encode next consonant + optional matra, then append ï
+        if (i < chars.length && CONS[chars[i]]) {
+          const sub = encodeOneCons(chars, i);
+          out.push(...sub.glyphs);
+          out.push('ï'); // reph marker
+          i += sub.consumed;
+        } else {
+          out.push('U'); // fallback
+        }
+        continue;
       }
-
-      result += cMap[ch] + matra;
+ 
+      // ━━ HALANT conjunct (not reph): consonant + ् + consonant ━━
+      if (nxt === '्') {
+        // Special conjunct: त् + र -> §É
+        if (ch === 'त' && nxt2 === 'र') {
+          out.push('§'); // half-त
+          out.push('É'); // represents र in त्र conjunct
+          i += 3; // consume त + ् + र
+          // Check for matra on the conjunct
+          const m = chars[i] || '';
+          if (m && MATRAS_AFTER[m]) {
+            const mc = MATRAS_AFTER[m];
+            if (mc) for (const c of mc) out.push(c);
+            i++;
+          }
+          continue;
+        }
+        // General conjunct:
+        // For É-tail consonants: output BASE ONLY (suppress tail, no N)
+        // For single-char consonants (0-tail): output base + N
+        if (ttype === 'E' || ttype === 'H' || ttype === 'U') {
+          // Suppress tail — the conjunct is formed by base + next consonant directly
+          out.push(base);
+          // No tail, no N
+          i += 2; // consume consonant + virama
+        } else {
+          // Single-char consonant (like द, र) before conjunct: need explicit N
+          out.push(base);
+          out.push('N');
+          i += 2;
+        }
+        continue;
+      }
+ 
+      // ━━ ि-matra (precedes consonant in BRH visual order) ━━
+      if (nxt === 'ि') {
+        out.push('Ì');
+        out.push(base);
+        out.push(tail);
+        i += 2;
+        continue;
+      }
+ 
+      // ━━ Normal consonant with optional matra ━━
+      const matra = (MATRAS_AFTER[nxt] !== undefined || MATRAS_BETWEEN_U[nxt] !== undefined) ? nxt : '';
+ 
+      if (ttype === 'U') {
+        // ü-tail consonant (क): matra goes BETWEEN base and ü
+        // Exception: ी comes AFTER as Ð
+        if (matra === 'ी') {
+          out.push(base); out.push(tail); out.push('Ð');
+          i += 2;
+        } else if (matra && MATRAS_BETWEEN_U[matra]) {
+          const mc = MATRAS_BETWEEN_U[matra];
+          out.push(base);
+          if (mc) for (const c of mc) out.push(c);
+          out.push(tail);
+          i += 2;
+        } else {
+          out.push(base); out.push(tail);
+          i += 1;
+        }
+      } else if (ttype === 'E' || ttype === 'H') {
+        // É-tail or û-tail: emit full consonant, then matra after
+        out.push(base);
+        out.push(tail);
+        if (matra) {
+          const mc = MATRAS_AFTER[matra];
+          if (mc) for (const c of mc) out.push(c);
+          i += 2;
+        } else {
+          i += 1;
+        }
+      } else {
+        // Single-char consonant (द, र): emit base, matra after
+        out.push(base);
+        if (matra) {
+          const mc = MATRAS_AFTER[matra];
+          if (mc) for (const c of mc) out.push(c);
+          i += 2;
+        } else {
+          i += 1;
+        }
+      }
       continue;
     }
-
-    result += ch;
+ 
+    // Standalone matra (shouldn't normally appear alone, but handle gracefully)
+    if (MATRAS_AFTER[ch]) {
+      const mc = MATRAS_AFTER[ch];
+      if (mc) for (const c of mc) out.push(c);
+      i++; continue;
+    }
+ 
+    // Virama standalone
+    if (ch === '्') { out.push('N'); i++; continue; }
+ 
+    // Nukta (used in ज़, etc.) — skip
+    if (ch === '़') { i++; continue; }
+ 
+    // Pass through everything else (spaces, English, punctuation)
+    out.push(ch);
+    i++;
   }
-
-  document.getElementById('output').value = result;
+ 
+  return out.join('');
 }
-
-function copyOutput(){
-  const text = document.getElementById('output').value;
-
-  navigator.clipboard.writeText(text).then(()=>{
-    const s = document.getElementById('status');
-    s.textContent = '✓ Copied!';
-    setTimeout(()=>s.textContent='',2000);
+ 
+function encodeOneCons(chars, i) {
+  // Encode the consonant at chars[i] with any following matra (except ि which must come before)
+  const ch = chars[i];
+  if (!CONS[ch]) return { glyphs: [ch], consumed: 1 };
+  const [base, tail, ttype] = CONS[ch];
+  const nxt = chars[i + 1] || '';
+  const matra = (MATRAS_AFTER[nxt] !== undefined) ? nxt : '';
+  const glyphs = [];
+ 
+  if (nxt === 'ि') {
+    glyphs.push('Ì', base, tail);
+    return { glyphs, consumed: 2 };
+  }
+ 
+  if (ttype === 'U') {
+    if (matra === 'ी') { glyphs.push(base, tail, 'Ð'); return { glyphs, consumed: 2 }; }
+    if (matra && MATRAS_BETWEEN_U[matra]) {
+      const mc = MATRAS_BETWEEN_U[matra];
+      glyphs.push(base);
+      if (mc) for (const c of mc) glyphs.push(c);
+      glyphs.push(tail);
+      return { glyphs, consumed: 2 };
+    }
+    glyphs.push(base, tail);
+  } else if (ttype === 'E' || ttype === 'H') {
+    glyphs.push(base, tail);
+    if (matra) { const mc = MATRAS_AFTER[matra]; if (mc) for (const c of mc) glyphs.push(c); return { glyphs, consumed: 2 }; }
+  } else {
+    glyphs.push(base);
+    if (matra) { const mc = MATRAS_AFTER[matra]; if (mc) for (const c of mc) glyphs.push(c); return { glyphs, consumed: 2 }; }
+  }
+  return { glyphs, consumed: 1 };
+}
+ 
+// =============================================================================
+// UI
+// =============================================================================
+ 
+const inputEl = document.getElementById('input');
+const outputEl = document.getElementById('output');
+const inCount = document.getElementById('in-count');
+const outCount = document.getElementById('out-count');
+const statusMsg = document.getElementById('status-msg');
+ 
+function convert() {
+  const text = inputEl.value;
+  const result = unicodeToBRH(text);
+  outputEl.value = result;
+  inCount.textContent = text.length + ' chars';
+  outCount.textContent = result.length + ' chars';
+}
+ 
+inputEl.addEventListener('input', convert);
+ 
+function clearAll() {
+  inputEl.value = '';
+  outputEl.value = '';
+  inCount.textContent = '0 chars';
+  outCount.textContent = '0 chars';
+  inputEl.focus();
+}
+ 
+let copyTimeout;
+function copyOutput() {
+  const text = outputEl.value;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    statusMsg.classList.add('show');
+    clearTimeout(copyTimeout);
+    copyTimeout = setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+      statusMsg.classList.remove('show');
+    }, 2000);
   });
 }
-
-// Auto-load sample
-window.onload = () => {
-  document.getElementById('input').value =
-  "संपादकीय - तरंग हमारे विद्यालय की वार्षिक पत्रिका तरंग...";
+ 
+function setSample(text) {
+  inputEl.value = text;
   convert();
-};
-
+  inputEl.focus();
+}
+ 
+function toggleRef(btn) {
+  const table = document.getElementById('ref-table');
+  const open = table.classList.toggle('open');
+  btn.textContent = open ? 'Hide character map ↑' : 'Show character map ↓';
+  if (open && !document.getElementById('ref-inner').children.length) buildRefTable();
+}
+ 
+function buildRefTable() {
+  const inner = document.getElementById('ref-inner');
+  const allEntries = [
+    // Independent vowels
+    ['अ', 'A', 'a'], ['आ', 'AÉ', 'aa'], ['इ', 'C', 'i'], ['ई', 'CÏ', 'ii'],
+    ['उ', 'E', 'u'], ['ऊ', 'EÔ', 'uu'], ['ए', 'L', 'e'], ['ऐ', 'Læ', 'ai'],
+    ['ओ', 'Aå', 'o'], ['औ', 'AÉæ', 'au'],
+    // Consonants (full form)
+    ['क', 'Mü', 'ka'], ['ख', 'ZÉ', 'kha'], ['ग', 'aÉ', 'ga'], ['घ', 'bÉ', 'gha'],
+    ['च', 'cÉ', 'cha'], ['छ', 'û', 'chha'], ['ज', 'eÉ', 'ja'], ['झ', '>É', 'jha'],
+    ['ट', 'VÉ', 'Ta'], ['ठ', 'BÉ', 'Tha'], ['ड', 'Mû', 'Da'], ['ढ', '<É', 'Dha'],
+    ['ण', 'hÉ', 'Na'], ['त', 'iÉ', 'ta'], ['थ', 'jÉ', 'tha'], ['द', 'S', 'da'],
+    ['ध', 'kÉ', 'dha'], ['न', 'lÉ', 'na'], ['प', 'mÉ', 'pa'], ['फ', 'TÉ', 'pha'],
+    ['ब', 'oÉ', 'ba'], ['भ', 'pÉ', 'bha'], ['म', 'qÉ', 'ma'], ['य', 'rÉ', 'ya'],
+    ['र', 'U', 'ra'], ['ल', 'sÉ', 'la'], ['व', 'uÉ', 'va'], ['श', 'zÉ', 'sha'],
+    ['ष', 'wÉ', 'Sha'], ['स', 'xÉ', 'sa'], ['ह', 'Wû', 'ha'],
+    // Matras
+    ['ा', 'É', 'aa'], ['ि', 'Ì..', 'i'], ['ी', 'Ï', 'ii'], ['ु', 'Ñ', 'u'],
+    ['ू', 'Ô', 'uu'], ['े', 'å', 'e'], ['ै', 'æ', 'ai'], ['ो', 'Éå', 'o'],
+    ['ौ', 'Éæ', 'au'], ['ं', 'Ç', 'anusv'], ['ः', '%', 'visarga'],
+    // Special
+    ['र् (रeph)', 'ï', 'reph'], ['त्र', '§É', 'tra'], ['्', 'N', 'halant'],
+    ['।', '~', 'danda'],
+  ];
+  inner.innerHTML = allEntries.map(([dev, brh, label]) => `
+    <div class="ref-cell">
+      <span class="dev">${dev}</span>
+      <span class="brh-code">${brh}</span>
+      <span class="label">${label}</span>
+    </div>`).join('');
+}
+ 
+// Load a default sample on page load
+window.addEventListener('DOMContentLoaded', () => {
+  setSample('भाग-क (व्याकरण)');
+});
 </script>
-
 </body>
-</html>
